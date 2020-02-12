@@ -34,23 +34,23 @@ impl Cpu {
 
   pub fn execute(&mut self) {
     loop {
-      let (op, a, b, c) = self.fetch_args();
+      let (op,a,b,c) = self.fetch_args();
       match op {
         HLT => return,
-        SET => self.reg[a] = b,
-        PSH => self.stack.push_back(a as u16),
-        POP => self.reg[a] = self.stack.pop_back().expect("Tried to pop empty stack"),
-        EQ  => self.reg[a] = (b == c) as u16,
-        GT  => self.reg[a] = (b > c)  as u16,
         JMP => self.pc = a,
         JT  => if a != 0 { self.pc = b as usize },
         JF  => if a == 0 { self.pc = b as usize },
+        PSH => self.stack.push_back(a as u16),
+        POP => self.reg[a] = self.stack.pop_back().expect("stack underflow"),
+        SET => self.reg[a] = b,
+        EQ  => self.reg[a] = (b == c) as u16,
+        GT  => self.reg[a] = (b > c)  as u16,
         ADD => self.reg[a] = (b + c) % 0x8000,
-        MUL => self.reg[a] = (((b as u32) * (c as u32)) % 0x8000) as u16,
+        MUL => self.reg[a] = (b * c) % 0x8000,
         MOD => self.reg[a] = (b % c) % 0x8000,
         AND => self.reg[a] = (b & c) % 0x8000,
         OR  => self.reg[a] = (b | c) % 0x8000,
-        NOT => self.reg[a] = !b % 0x8000,
+        NOT => self.reg[a] = !b      % 0x8000,
         RD  => self.reg[a] = self.mem[b as usize],
         WRT => self.mem[a] = b,
         CLL => {
@@ -58,25 +58,25 @@ impl Cpu {
           self.pc = a;
         },
         RET => match self.stack.pop_back() {
-          Some(v) => self.pc = v as usize,
+          Some(a) => self.pc = a as usize,
           None    => return,
         },
         OUT => print!("{}", a as u8 as char),
-        IN  => match stdin().lock().bytes().next() {
-          Some(Ok(ch)) => self.reg[a] = ch as u16,
-          Some(Err(e)) => panic!("Error reading input: {}", e),
-          None         => panic!("stdin reached EOF"),
-        },
+        IN  => self.reg[a] = self.read_char(),
         NOP => {}
         _   => unreachable!("invalid opcode {}", op)
       }
     }
   }
 
+  fn read_char(&self) -> u16 {
+    stdin().lock().bytes().next().unwrap().unwrap() as u16
+  }
+
   fn fetch_args(&mut self) -> (u16,usize,u16,u16) {
     let op = self.mem[self.pc];
     let a = match op {
-      PSH|JMP|JT|JF => self.read_adr(1),
+      PSH|JMP|JT|JF|CLL|WRT => self.read_adr(1),
       _ => self.mem[self.pc+1] - 0x8000,
     };
     let b = self.read_adr(2);
