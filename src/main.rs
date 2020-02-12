@@ -3,7 +3,7 @@ use std::io::Result;
 use itertools::Itertools;
 
 mod cpu;
-use cpu::Cpu;
+use cpu::CPU;
 
 fn read_program(path: &str) -> Result<Vec<u16>> {
   let buf = fs::read(path)?;
@@ -11,9 +11,7 @@ fn read_program(path: &str) -> Result<Vec<u16>> {
     .tuples()
     .map(|(&a,&b)| {
       let top = (b as u16) << 8;
-      let code = top | a as u16;
-      assert!(code < 0x8008);
-      code
+      top | a as u16
     })
     .collect();
   Ok(program)
@@ -21,7 +19,7 @@ fn read_program(path: &str) -> Result<Vec<u16>> {
 
 fn main() -> Result<()> {
   let program = read_program("./challenge.bin")?;
-  let mut cpu = Cpu::new(&program);
+  let mut cpu = CPU::new(&program);
   cpu.execute();
   Ok(())
 }

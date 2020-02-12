@@ -13,21 +13,21 @@ const WRT: u16 = 16; const CLL: u16 = 17;
 const RET: u16 = 18; const OUT: u16 = 19;
 const IN:  u16 = 20; const NOP: u16 = 21;
 
-pub struct Cpu {
-  reg: [u16;8],
-  stack: VecDeque<u16>,
+pub struct CPU {
+  reg: [u16; 8],
   mem: [u16; 0x8000],
+  stack: VecDeque<u16>,
   pc: usize,
 }
 
-impl Cpu {
+impl CPU {
   pub fn new(program: &[u16]) -> Self {
     let mut mem = [0; 0x8000];
-    for i in 0..program.len() { mem[i] = program[i]; }
+    mem[..program.len()].clone_from_slice(program);
     Self {
-      reg: [0;8],
-      stack: VecDeque::new(),
+      reg: [0; 8],
       mem,
+      stack: VecDeque::new(),
       pc: 0,
     }
   }
@@ -35,6 +35,7 @@ impl Cpu {
   pub fn execute(&mut self) {
     loop {
       let (op,a,b,c) = self.fetch_args();
+      self.incr_pc(op);
       match op {
         HLT => return,
         JMP => self.pc = a,
@@ -45,17 +46,16 @@ impl Cpu {
         SET => self.reg[a] = b,
         EQ  => self.reg[a] = (b == c) as u16,
         GT  => self.reg[a] = (b > c)  as u16,
-        ADD => self.reg[a] = (b + c) % 0x8000,
-        MUL => self.reg[a] = (b * c) % 0x8000,
-        MOD => self.reg[a] = (b % c) % 0x8000,
-        AND => self.reg[a] = (b & c) % 0x8000,
-        OR  => self.reg[a] = (b | c) % 0x8000,
-        NOT => self.reg[a] = !b      % 0x8000,
+        ADD => self.reg[a] = (b + c) & 0x7FFF,
+        MUL => self.reg[a] = (b * c) & 0x7FFF,
+        NOT => self.reg[a] = !b & 0x7FFF,
+        MOD => self.reg[a] = b % c,
+        AND => self.reg[a] = b & c,
+        OR  => self.reg[a] = b | c,
         RD  => self.reg[a] = self.mem[b as usize],
         IN  => self.reg[a] = read_char(),
         OUT => print!("{}", a as u8 as char),
         WRT => self.mem[a] = b,
-        NOP => {}
         CLL => {
           self.stack.push_back(self.pc as u16);
           self.pc = a;
@@ -64,6 +64,7 @@ impl Cpu {
           Some(a) => self.pc = a as usize,
           None    => return,
         },
+        NOP => {},
         _   => panic!("invalid opcode {}", op)
       }
     }
@@ -71,8 +72,8 @@ impl Cpu {
 }
 
 // private methods
-impl Cpu {
-  fn fetch_args(&mut self) -> (u16,usize,u16,u16) {
+impl CPU {
+  fn fetch_args(&self) -> (u16,usize,u16,u16) {
     let op = self.mem[self.pc];
     let a = match op {
       PSH|JMP|JT|JF|CLL|WRT|OUT => self.read_adr(1),
@@ -80,23 +81,23 @@ impl Cpu {
     };
     let b = self.read_adr(2);
     let c = self.read_adr(3);
-
-    self.pc += match op {
-      HLT|RET|JMP              => 0,
-      NOP                      => 1,
-      PSH|POP|CLL|OUT|IN       => 2,
-      SET|JT|JF|NOT|RD|WRT     => 3,
-      EQ|GT|ADD|MUL|MOD|AND|OR => 4,
-      _ => panic!("invalid op {}", op),
-    };
-
     (op, a as usize, b, c)
+  }
+
+  fn incr_pc(&mut self, op: u16) {
+    self.pc += match op {
+      EQ|GT|ADD|MUL|MOD|AND|OR => 4,
+      SET|JT|JF|NOT|RD|WRT     => 3,
+      PSH|POP|CLL|OUT|IN       => 2,
+      NOP                      => 1,
+      _                        => 0,
+    };
   }
 
   fn read_adr(&self, offset: usize) -> u16 {
     let v = self.mem[self.pc + offset];
     match v {
-      0..=0x7FFF      => v,
+      0x0000..=0x7FFF => v,
       0x8000..=0x8007 => self.reg[(v - 0x8000) as usize],
       _               => unreachable!()
     }
