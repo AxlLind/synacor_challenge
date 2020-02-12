@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::io::{stdin, Read};
 
 const HLT: u16 = 0;  const SET: u16 = 1;
 const PSH: u16 = 2;  const POP: u16 = 3;
@@ -13,10 +12,13 @@ const WRT: u16 = 16; const CLL: u16 = 17;
 const RET: u16 = 18; const OUT: u16 = 19;
 const IN:  u16 = 20; const NOP: u16 = 21;
 
+pub enum ExitCode { NeedInput, Halted }
+
 pub struct CPU {
   reg: [u16; 8],
   mem: [u16; 0x8000],
   stack: VecDeque<u16>,
+  input: VecDeque<u16>,
   pc: usize,
 }
 
@@ -28,16 +30,17 @@ impl CPU {
       reg: [0; 8],
       mem,
       stack: VecDeque::new(),
+      input: VecDeque::new(),
       pc: 0,
     }
   }
 
-  pub fn execute(&mut self) {
+  pub fn execute(&mut self) -> ExitCode {
     loop {
       let (op,a,b,c) = self.fetch_args();
       self.incr_pc(op);
       match op {
-        HLT => return,
+        HLT => return ExitCode::Halted,
         JMP => self.pc = a,
         JT  => if a != 0 { self.pc = b as usize },
         JF  => if a == 0 { self.pc = b as usize },
@@ -53,21 +56,31 @@ impl CPU {
         AND => self.reg[a] = b & c,
         OR  => self.reg[a] = b | c,
         RD  => self.reg[a] = self.mem[b as usize],
-        IN  => self.reg[a] = read_char(),
-        OUT => print!("{}", a as u8 as char),
         WRT => self.mem[a] = b,
+        OUT => print!("{}", a as u8 as char),
+        IN  => match self.input.pop_front() {
+          Some(i) => {
+            self.reg[a] = i;
+            self.pc += 2;
+          }
+          None => return ExitCode::NeedInput,
+        },
         CLL => {
           self.stack.push_back(self.pc as u16);
           self.pc = a;
         },
         RET => match self.stack.pop_back() {
           Some(a) => self.pc = a as usize,
-          None    => return,
+          None    => return ExitCode::Halted,
         },
         NOP => {},
         _   => panic!("invalid opcode {}", op)
       }
     }
+  }
+
+  pub fn push_input<T: Into<u16>>(&mut self, t: T) {
+    self.input.push_back(t.into());
   }
 }
 
@@ -88,7 +101,7 @@ impl CPU {
     self.pc += match op {
       EQ|GT|ADD|MUL|MOD|AND|OR => 4,
       SET|JT|JF|NOT|RD|WRT     => 3,
-      PSH|POP|CLL|OUT|IN       => 2,
+      PSH|POP|CLL|OUT          => 2,
       NOP                      => 1,
       _                        => 0,
     };
@@ -102,8 +115,4 @@ impl CPU {
       _               => unreachable!()
     }
   }
-}
-
-fn read_char() -> u16 {
-  stdin().lock().bytes().next().unwrap().unwrap() as u16
 }
