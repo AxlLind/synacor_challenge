@@ -14,10 +14,10 @@ const RET: u16 = 18; const OUT: u16 = 19;
 const IN:  u16 = 20; const NOP: u16 = 21;
 
 pub struct Cpu {
-  pub reg: [u16;8],
-  pub stack: VecDeque<u16>,
-  pub mem: [u16; 0x8000],
-  pub pc: usize,
+  reg: [u16;8],
+  stack: VecDeque<u16>,
+  mem: [u16; 0x8000],
+  pc: usize,
 }
 
 impl Cpu {
@@ -52,7 +52,10 @@ impl Cpu {
         OR  => self.reg[a] = (b | c) % 0x8000,
         NOT => self.reg[a] = !b      % 0x8000,
         RD  => self.reg[a] = self.mem[b as usize],
+        IN  => self.reg[a] = read_char(),
+        OUT => print!("{}", a as u8 as char),
         WRT => self.mem[a] = b,
+        NOP => {}
         CLL => {
           self.stack.push_back(self.pc as u16);
           self.pc = a;
@@ -61,22 +64,18 @@ impl Cpu {
           Some(a) => self.pc = a as usize,
           None    => return,
         },
-        OUT => print!("{}", a as u8 as char),
-        IN  => self.reg[a] = self.read_char(),
-        NOP => {}
-        _   => unreachable!("invalid opcode {}", op)
+        _   => panic!("invalid opcode {}", op)
       }
     }
   }
+}
 
-  fn read_char(&self) -> u16 {
-    stdin().lock().bytes().next().unwrap().unwrap() as u16
-  }
-
+// private methods
+impl Cpu {
   fn fetch_args(&mut self) -> (u16,usize,u16,u16) {
     let op = self.mem[self.pc];
     let a = match op {
-      PSH|JMP|JT|JF|CLL|WRT => self.read_adr(1),
+      PSH|JMP|JT|JF|CLL|WRT|OUT => self.read_adr(1),
       _ => self.mem[self.pc+1] - 0x8000,
     };
     let b = self.read_adr(2);
@@ -88,7 +87,7 @@ impl Cpu {
       PSH|POP|CLL|OUT|IN       => 2,
       SET|JT|JF|NOT|RD|WRT     => 3,
       EQ|GT|ADD|MUL|MOD|AND|OR => 4,
-      _ => unreachable!("invalid op {}", op),
+      _ => panic!("invalid op {}", op),
     };
 
     (op, a as usize, b, c)
@@ -102,4 +101,8 @@ impl Cpu {
       _               => unreachable!()
     }
   }
+}
+
+fn read_char() -> u16 {
+  stdin().lock().bytes().next().unwrap().unwrap() as u16
 }

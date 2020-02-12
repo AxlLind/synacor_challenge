@@ -7,14 +7,16 @@ use cpu::Cpu;
 
 fn read_program(path: &str) -> Result<Vec<u16>> {
   let buf = fs::read(path)?;
-  let v = buf.iter()
+  let program = buf.iter()
     .tuples()
     .map(|(&a,&b)| {
       let top = (b as u16) << 8;
-      top | a as u16
+      let code = top | a as u16;
+      assert!(code < 0x8008);
+      code
     })
     .collect();
-  Ok(v)
+  Ok(program)
 }
 
 fn main() -> Result<()> {
