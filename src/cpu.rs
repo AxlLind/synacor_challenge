@@ -82,6 +82,11 @@ impl CPU {
   pub fn push_input<T: Into<u16>>(&mut self, t: T) {
     self.input.push_back(t.into());
   }
+
+  pub fn push_str(&mut self, s: &str) {
+    for b in s.bytes() { self.push_input(b); }
+    self.push_input(b'\n');
+  }
 }
 
 // private methods
