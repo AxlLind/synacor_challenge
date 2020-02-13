@@ -79,13 +79,8 @@ impl CPU {
     }
   }
 
-  pub fn push_input<T: Into<u16>>(&mut self, t: T) {
-    self.input.push_back(t.into());
-  }
-
   pub fn push_str(&mut self, s: &str) {
     for b in s.bytes() { self.push_input(b); }
-    self.push_input(b'\n');
   }
 }
 
@@ -119,5 +114,9 @@ impl CPU {
       0x8000..=0x8007 => self.reg[(v - 0x8000) as usize],
       _               => unreachable!()
     }
+  }
+
+  fn push_input<T: Into<u16>>(&mut self, t: T) {
+    self.input.push_back(t.into());
   }
 }
