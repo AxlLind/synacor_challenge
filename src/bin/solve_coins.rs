@@ -1,11 +1,11 @@
 use itertools::Itertools;
 
 /*
-  e are given coins with values 2,3,5,7,9
+  we are given coins with values 2,3,5,7,9
   and this equation to solve:
     _ + _ * _^2 + _^3 - _ = 399
   only 5! = 120 combinations to check so
-  lets just brute force a solution
+  this can easily be brute forced
 */
 
 fn main() {
