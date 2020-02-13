@@ -2,8 +2,6 @@ use std::fs;
 use std::io::Result;
 use itertools::Itertools;
 use easy_io::InputReader;
-
-mod cpu;
 use cpu::{CPU, ExitCode};
 
 fn read_program(path: &str) -> Result<Vec<u16>> {
