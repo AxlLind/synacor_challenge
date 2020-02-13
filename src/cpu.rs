@@ -12,7 +12,7 @@ const WRT: u16 = 16; const CLL: u16 = 17;
 const RET: u16 = 18; const OUT: u16 = 19;
 const IN:  u16 = 20; const NOP: u16 = 21;
 
-pub enum ExitCode { NeedInput, Halted }
+pub enum ExitCode { Output(char), NeedInput, Halted }
 
 pub struct CPU {
   reg: [u16; 8],
@@ -57,7 +57,7 @@ impl CPU {
         OR  => self.reg[a] = b | c,
         RD  => self.reg[a] = self.mem[b as usize],
         WRT => self.mem[a] = b,
-        OUT => print!("{}", a as u8 as char),
+        OUT => return ExitCode::Output(a as u8 as char),
         IN  => match self.input.pop_front() {
           Some(i) => {
             self.reg[a] = i;
@@ -81,6 +81,7 @@ impl CPU {
 
   pub fn push_str(&mut self, s: &str) {
     for b in s.bytes() { self.push_input(b); }
+    self.push_input(b'\n');
   }
 }
 
