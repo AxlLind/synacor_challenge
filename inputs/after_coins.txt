@@ -1,3 +1,0 @@
-go north
-take teleporter
-use teleporter

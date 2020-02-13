@@ -39,3 +39,11 @@ go up
 take shiny coin
 go down
 go east
+use blue coin
+use red coin
+use shiny coin
+use concave coin
+use corroded coin
+go north
+take teleporter
+use teleporter

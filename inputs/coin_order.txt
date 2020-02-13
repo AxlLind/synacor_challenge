@@ -1,5 +1,0 @@
-use blue coin
-use red coin
-use shiny coin
-use concave coin
-use corroded coin
