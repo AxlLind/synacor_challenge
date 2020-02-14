@@ -15,7 +15,7 @@ const IN:  u16 = 20; const NOP: u16 = 21;
 pub enum ExitCode { Output(char), NeedInput, Halted }
 
 pub struct CPU {
-  reg: [u16; 8],
+  pub reg: [u16; 8],
   mem: [u16; 0x8000],
   stack: VecDeque<u16>,
   input: VecDeque<u16>,
