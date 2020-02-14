@@ -68,9 +68,13 @@ This is of course an unweighted graph. This means [BFS](https://en.wikipedia.org
 
 This part was basically just a simple graph finding problem but still fun! The previous part was much, much more challenging.
 
+In the end you walk into the vault and find a mirror. When you use the mirror it gives you the final code but when I gave it to the site it was incorrect! After a while I figure out that it's a mirror so obviously the code is mirrored! I reverse the string but still incorrect. If you look at each letter carefully you notice that they are all symmetrical except for `p,q` which when mirror become each other. So the translation becomes the following and with that I had 8/8 codes!
+
+![flag8](./screenshots/flag8.png)
+
 See [maze_shortest_path.rs](./src/bin/maze_shortest_path.rs).
 
 ### Final thoughs
-With that I finished the challenge. I did it over the course of 3 days and put maybe around 20 hours into it. It was a lot of fun, especially the teleporter part. You really had to get into the assembly and even disassemble it yourself. That part was really cool!
+With that I finished the challenge! I did it over the course of 3 days and put maybe around 15 hours into it. It was a lot of fun, especially the teleporter part. You really had to get into the assembly and even disassemble it yourself. That part was really cool!
 
-Thanks [@ericwastl](https://twitter.com/ericwastl) for a supercool challenge!
+Thanks [@ericwastl](https://twitter.com/ericwastl) for a nice challenge!
