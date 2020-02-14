@@ -25,7 +25,7 @@ fn read_program(path: &str) -> Vec<u16> {
 
 fn to_reg(i: u16) -> String {
   match i {
-    0x0000..=0x7FFF => i.to_string(),
+    0x0000..=0x7FFF => format!("{:#x}", i),
     0x8000..=0x8007 => format!("${}", i - 0x8000),
     _               => unreachable!()
   }
@@ -43,10 +43,10 @@ fn main() {
     let c = to_reg(program[i+3]);
 
     match opcode {
-      HLT|RET|NOP              => { i += 1; println!("{:>4}: {}", pc, op); },
-      PSH|POP|JMP|CLL|OUT|IN   => { i += 2; println!("{:>4}: {} {}", pc, op, a); },
-      SET|JT|JF|NOT|RD|WRT     => { i += 3; println!("{:>4}: {} {} {}", pc, op, a, b); },
-      EQ|GT|ADD|MUL|MOD|AND|OR => { i += 4; println!("{:>4}: {} {} {} {}", pc, op, a, b, c); },
+      HLT|RET|NOP              => { i += 1; println!("{:#04x}: {}", pc, op); },
+      PSH|POP|JMP|CLL|OUT|IN   => { i += 2; println!("{:#04x}: {} {}", pc, op, a); },
+      SET|JT|JF|NOT|RD|WRT     => { i += 3; println!("{:#04x}: {} {} {}", pc, op, a, b); },
+      EQ|GT|ADD|MUL|MOD|AND|OR => { i += 4; println!("{:#04x}: {} {} {} {}", pc, op, a, b, c); },
       _                        => { i += 1; },
     };
   }
