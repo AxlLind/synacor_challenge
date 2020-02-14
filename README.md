@@ -27,7 +27,7 @@ After exploring the game you end up with 5 coins at a locked door. You need to p
 
 So the puzzle is clearly to satisfy the equation with the order we place the coins, given their respective value. With 5 coins there are only `5! = 120` permutations to check so this can easily be brute forced.
 
-See [solution here](./src/bin/solve_coins.rs).
+See [solve_coins.rs](./src/bin/solve_coins.rs).
 
 ### 4. Finding the teleporter setting
 After the door unlocks we find a teleporter and a book in the next room. Using the teleporter takes you to a dead end. The book hints that register `$7` is unused in the program except for when the teleporter is used. So we need to find the correct value for the register so that the teleporter takes us to the place we want to go.
@@ -36,7 +36,9 @@ After the door unlocks we find a teleporter and a book in the next room. Using t
 Why make things complicated? Always try the easiest solution first. Unfortunately, brute force does not work. The program performs some expensive computation for all non-zero values of `$7`. Each computation takes minutes so brute forcing `0x8000` values will not work. We need to be able to see what the program actually does. So this lead me to the next step.
 
 #### 4.2 Build a disassembler
-Building a basic disassembler was was fairly straight forward. You just have to step through the binary and print the corresponding instructions in a readable form. A large part of the binary does not seem to contain machine code though, which tripped me up for a bit.
+Building a basic disassembler was was fairly straight forward. You just have to step through the binary and print the corresponding instructions in a readable form. The majority of the binary does not contain machine code though. It presumably contains encrypted data which can only be decrypted when solving the puzzles.
+
+![asm](./screenshots/asm.png)
 
 See [disassembler.rs](./src/bin/disassembler.rs) and the [disassembled program](./files/disassembled.asm).
 
@@ -64,7 +66,7 @@ I translated the maze into Rust by hand. In hindsight was maybe a dumb idea. It 
 
 ![Graph](./screenshots/graph.png)
 
-This is of course an unweighted graph. This means [BFS](https://en.wikipedia.org/wiki/Breadth-first_search) will give us the shortest path, which is obviously easier to implement than something like [Dijkstra's algorithm](`https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm`). The key idea was to consider your current state as `(place,score)`, not just `place`. With this you can easily avoid infinite loops in the BFS while at the same time allowing you to visit a room more than once. The goal is then just the state `(1,30)` and your starting position `(22,22)`.
+This is an unweighted graph, meaning [BFS](https://en.wikipedia.org/wiki/Breadth-first_search) will give us the shortest path. This is easier to implement than something like [Dijkstra's algorithm](`https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm`). The key idea was to consider your current state as `(place,score)`, not just `place`. With this you can easily avoid infinite loops in the BFS while at the same time allowing you to visit a room more than once. The goal is then just the state `(1,30)` and your starting position `(22,22)`.
 
 This part was basically just a simple graph finding problem but still fun! The previous part was much, much more challenging.
 
@@ -74,7 +76,7 @@ In the end you walk into the vault and find a mirror. When you use the mirror it
 
 See [maze_shortest_path.rs](./src/bin/maze_shortest_path.rs).
 
-### Final thoughs
-With that I finished the challenge! I did it over the course of 3 days and put maybe around 15 hours into it. It was a lot of fun, especially the teleporter part. You really had to get into the assembly and even disassemble it yourself. That part was really cool!
+### Final thoughts
+With that I finished the challenge! I did it over the course of 3 days and put maybe around 15 hours into it. It was a lot of fun, especially the teleporter part. You really had to get into the assembly and even disassemble it yourself. That part was really cool! I would have liked to see more of that in the final challenge. That was just an unrelated path finding problem.
 
 Thanks [@ericwastl](https://twitter.com/ericwastl) for a nice challenge!
