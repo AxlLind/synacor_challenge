@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 
-type Cache = HashMap<(u16,u16),u16>;
-
 /*
-  Below is the assembly that runs the expensive computation.
-  To the left are comments as to what each instruction does.
+  Below is the assembly that runs the expensive computation. To the
+  left are comments I made to make it easier to understand for me.
 
     0x178b:  jt $0 0x1793      # if $0 != 0 { goto 0x1793; }
     0x178e: add $0 $1 0x1      # $0 = $1 + 1
@@ -24,13 +22,15 @@ type Cache = HashMap<(u16,u16),u16>;
     0x17b3: ret                # return
 
   We see that the register $0 is the only register used after
-  the function returns so this is clearly the return value.
+  the function returns so this is clearly the single return value.
   After some analysis, we can convert this into the function f below.
 
-  It is a very slow Ackermann-like function, but with memoization
-  it is fast enough to find the correct setting of 25734 with in
-  a reasonable amount of time.
+  We see that this is a very slow Ackermann-like function, but
+  with memoization it is fast enough to find the correct setting
+  of 25734 with in a reasonable amount of time.
 */
+
+type Cache = HashMap<(u16,u16),u16>;
 
 fn f(cache: &mut Cache, args: (u16,u16), c: u16) -> u16 {
   if let Some(&v) = cache.get(&args) {
@@ -53,7 +53,7 @@ fn compute_setting(c: u16) -> u16 {
 }
 
 fn main() {
-  let v = (25730..0x8000)
+  let v = (0..0x8000)
     .find(|&c| compute_setting(c) == 6)
     .unwrap();
   println!("f(4,1,{}) = 6", v);
