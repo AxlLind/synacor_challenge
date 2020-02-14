@@ -18,7 +18,7 @@ See [cpu.rs](./src/cpu.rs).
 ### 2. Manually explore
 I started by manually exploring the game. Found the can after some frustration in the maze. Started writing down the commands I did and automatically feeding it to the CPU at the start of the program. This meant I did not have to replay the beginning all the time. Manually exploring worked up until you encounter the locked door.
 
-See [inputs.txt](./inputs.txt).
+See [inputs.txt](./files/inputs.txt).
 
 ### 3. Brute forcing coin order
 After exploring the game you end up with 5 coins at a locked door. You need to place them in the correct order. The description of the coins gives hints to their value and the door gives you an equation.
@@ -38,7 +38,7 @@ Why make things complicated? Always try the easiest solution first. Unfortunatel
 #### 4.2 Build a disassembler
 Building a basic disassembler was was fairly straight forward. You just have to step through the binary and print the corresponding instructions in a readable form. A large part of the binary does not seem to contain machine code though, which tripped me up for a bit.
 
-See [disassembler.rs](./src/bin/disassembler.rs) and the [disassembled program](./disassembled.asm).
+See [disassembler.rs](./src/bin/disassembler.rs) and the [disassembled program](./files/disassembled.asm).
 
 #### 4.3 Analyze the assembly
 Looking at the assembly we see that register `$7` only shows up a few times. First is in the test suite, at `0x0209`, where they just check that it is set to zero. This we can easily just remove this instruction (e.g replace it with `nop`), otherwise we do not pass the test suite when we try different values for `$7`. Secondly, we see it at address `0x154b` in a `jf` instruction. If the register is zero it jumps, so this is clearly where the teleporter code is! Lastly, we also see `$7` at the very end of the binary, at a function at adr `0x178b`. After some analysis of the assembly code, you realize that this is clearly where the expensive computation takes place.

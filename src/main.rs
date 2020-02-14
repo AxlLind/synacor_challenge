@@ -23,8 +23,8 @@ fn read_program(path: &str) -> Result<Vec<u16>> {
 }
 
 fn main() -> Result<()> {
-  let inputs = fs::read_to_string("./inputs.txt")?;
-  let program = read_program("./challenge.bin")?;
+  let inputs = fs::read_to_string("files/inputs.txt")?;
+  let program = read_program("files/challenge.bin")?;
   let mut cpu = CPU::new(&program);
   let mut input = InputReader::new();
 

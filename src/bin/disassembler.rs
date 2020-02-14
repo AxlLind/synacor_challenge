@@ -32,7 +32,7 @@ fn to_reg(i: u16) -> String {
 }
 
 fn main() {
-  let program = read_program("./challenge.bin");
+  let program = read_program("files/challenge.bin");
   let mut i = 0;
   while i < 6100 {
     let pc = i;
