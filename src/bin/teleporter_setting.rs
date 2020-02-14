@@ -25,36 +25,34 @@ use std::collections::HashMap;
   the function returns so this is clearly the single return value.
   After some analysis, we can convert this into the function f below.
 
-  We see that this is a very slow Ackermann-like function, but
-  with memoization it is fast enough to find the correct setting
-  of 25734 with in a reasonable amount of time.
+  We see that this is a very slow Ackermann-like function,
+  but with memoization it is fast enough. It finds the
+  correct setting of 25734 in about 7 minutes.
 */
 
 type Cache = HashMap<(u16,u16),u16>;
 
-fn f(cache: &mut Cache, args: (u16,u16), c: u16) -> u16 {
+fn f(cache: &mut Cache, c: u16, args: (u16,u16)) -> u16 {
   if let Some(&v) = cache.get(&args) {
     return v;
   }
   let v = match args {
-    (0,y) => y+1,
-    (x,0) => f(cache, (x-1, c), c),
-    (x,y) => {
-      let y = f(cache, (x, y-1), c);
-      f(cache, (x-1, y), c)
+    (0,b) => b+1,
+    (a,0) => f(cache, c, (a-1,c)),
+    (a,b) => {
+      let b = f(cache, c, (a,b-1));
+      f(cache, c, (a-1,b))
     }
   };
   cache.insert(args, v);
   v
 }
 
-fn compute_setting(c: u16) -> u16 {
-  f(&mut Cache::new(), (4,1), c)
-}
-
 fn main() {
-  let v = (0..0x8000)
-    .find(|&c| compute_setting(c) == 6)
-    .unwrap();
-  println!("f(4,1,{}) = 6", v);
+  let mut cache = Cache::new();
+  let v = (0..0x8000).find(|&c| {
+    cache.clear();
+    f(&mut cache, c, (4,1)) == 6
+  });
+  println!("f(4,1,{}) = 6", v.unwrap());
 }

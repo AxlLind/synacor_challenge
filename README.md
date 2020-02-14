@@ -42,6 +42,6 @@ After the door unlocks we find a teleporter and a book in the next room. Using t
 
 ---
 
-4.5 `Porting the expensive function to Rust` - After some comments in the assembly and analysis, I was able to port the expensive function to Rust. It looks like an [Ackermann](https://en.wikipedia.org/wiki/Ackermann_function)-style function, meaning it has a very deep recursive depth and is very expensive to compute. Just calling the function is way to slow even in Rust. Memoizing it though makes it quick enough to get an answer within a reasonable amount of time! Still slow but I am able to find the correct value within 10 minutes by just brute forcing all values for register `$7`.
+4.5 `Porting the expensive function to Rust` - After some comments in the assembly and analysis, I was able to port the expensive function to Rust. It looks like an [Ackermann](https://en.wikipedia.org/wiki/Ackermann_function)-style function, meaning it has a very deep recursive depth and is very expensive to compute. Just calling the function is way to slow even in Rust. Memoizing it though makes it quick enough to get an answer within a reasonable amount of time! Still slow but I am able to find the correct value in about 7 minutes.
 
 See [teleporter_setting.rs](./src/bin/teleporter_setting.rs).
