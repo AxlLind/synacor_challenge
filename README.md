@@ -1,6 +1,8 @@
 # Synacor Challenge
 Solution to the [Synacor Challenge](https://challenge.synacor.com/) in Rust.
 
+![finished](./screenshots/finished.png)
+
 :warning: Spoilers in the next section. Avoid reading the section below unless you want the challenge spoiled.
 
 ## Approach
@@ -8,6 +10,8 @@ This section details roughly the steps I took to solve the challenge and the dif
 
 ### 1. Build the VM
 Not too much issue here, took maybe 2-3 hours with some debugging to get it working. Having done [Advent of Code 2019](https://github.com/AxlLind/AdventOfCode2019/) certainly helped here. I think my implementation ended up quite clean.
+
+![cpu](./screenshots/cpu.png)
 
 See [cpu.rs](./src/cpu.rs).
 
@@ -17,7 +21,11 @@ I started by manually exploring the game. Found the can after some frustration i
 See [inputs.txt](./inputs.txt).
 
 ### 3. Brute forcing coin order
-After exploring the game you end up with 5 coins at a locked door. You need to place them in the correct order. The description of the coins gives hints to their value and the door gives you an equation. So the puzzle is clearly to satisfy the equation with the order we place the coins, given their respective value. With 5 coins there are only `5! = 120` permutations to check so this can easily be brute forced.
+After exploring the game you end up with 5 coins at a locked door. You need to place them in the correct order. The description of the coins gives hints to their value and the door gives you an equation.
+
+![equation](./screenshots/equation.png)
+
+So the puzzle is clearly to satisfy the equation with the order we place the coins, given their respective value. With 5 coins there are only `5! = 120` permutations to check so this can easily be brute forced.
 
 See [solution here](./src/bin/solve_coins.rs).
 
@@ -41,4 +49,28 @@ My first idea was to just remove the call to the expensive function. The program
 #### 4.5 Porting the expensive function to Rust
 After some comments in the assembly and analysis, I was able to port the expensive function to Rust. It looks like an [Ackermann](https://en.wikipedia.org/wiki/Ackermann_function)-style function, meaning it has a very deep recursive depth and is very expensive to compute. Just calling the function is way to slow even in Rust. Memoizing it though makes it quick enough to get an answer within a reasonable amount of time! Still slow but I am able to find the correct value in about 7 minutes. Code 7/8 done!
 
+![Flag 7](./screenshots/flag7.png)
+
 See [teleporter_setting.rs](./src/bin/teleporter_setting.rs).
+
+### 5. Solving the shortest path problem
+After you use the teleporter you end up at a beach. Walking north you end up at a temple. To the east you also find a journal giving you some clues for the puzzle ahead. By the temple is an orb with the value `22` written on it. Each room in the temple has something written on it. The temple looks like this:
+
+![Maze](./screenshots/maze.png)
+
+After exploring you see that the square in the top right corner leads to a vault but the door is locked. It gives a hint about the number `30`. So I presume the puzzle is to start at the value 22 and walk the maze and updating your current value with the corresponding operation and value. With the goal being to end up at the final square with a value of 30. The journal hints that you have few moves to do this in so presumably we need to find the shortest path.
+
+I translated the maze into Rust by hand. In hindsight was maybe a dumb idea. It turned out quite complicated since there are actually quite a few edges in this graph. I was very careful so I did not make any mistakes in the translation but it still took a while. A programmatic solution to generate the maze would have maybe been easier.
+
+![Graph](./screenshots/graph.png)
+
+This is of course an unweighted graph. This means [BFS](https://en.wikipedia.org/wiki/Breadth-first_search) will give us the shortest path, which is obviously easier to implement than something like [Dijkstra's algorithm](`https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm`). The key idea was to consider your current state as `(place,score)`, not just `place`. With this you can easily avoid infinite loops in the BFS while at the same time allowing you to visit a room more than once. The goal is then just the state `(1,30)` and your starting position `(22,22)`.
+
+This part was basically just a simple graph finding problem but still fun! The previous part was much, much more challenging.
+
+See [maze_shortest_path.rs](./src/bin/maze_shortest_path.rs).
+
+### Final thoughs
+With that I finished the challenge. I did it over the course of 3 days and put maybe around 20 hours into it. It was a lot of fun, especially the teleporter part. You really had to get into the assembly and even disassemble it yourself. That part was really cool!
+
+Thanks [@ericwastl](https://twitter.com/ericwastl) for a supercool challenge!
