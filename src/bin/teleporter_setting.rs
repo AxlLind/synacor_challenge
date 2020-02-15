@@ -26,16 +26,13 @@ use std::collections::HashMap;
   After some analysis, we can convert this into the function f below.
 
   We see that this is a very slow Ackermann-like function,
-  but with memoization it is fast enough. It finds the
-  correct setting of 25734 in about 7 minutes.
+  but with memoization it is fast enough. Still slow but
+  finds the correct setting of 25734 in about 7 minutes.
 */
 
-type Cache = HashMap<(u16,u16),u16>;
+fn f(cache: &mut HashMap<(u16,u16),u16>, c: u16, args: (u16,u16)) -> u16 {
+  if let Some(&v) = cache.get(&args) { return v; }
 
-fn f(cache: &mut Cache, c: u16, args: (u16,u16)) -> u16 {
-  if let Some(&v) = cache.get(&args) {
-    return v;
-  }
   let v = match args {
     (0,b) => b+1,
     (a,0) => f(cache, c, (a-1,c)),
@@ -44,12 +41,13 @@ fn f(cache: &mut Cache, c: u16, args: (u16,u16)) -> u16 {
       f(cache, c, (a-1,b))
     }
   };
+
   cache.insert(args, v);
   v
 }
 
 fn main() {
-  let mut cache = Cache::new();
+  let mut cache = HashMap::new();
   let v = (0..0x8000).find(|&c| {
     cache.clear();
     f(&mut cache, c, (4,1)) == 6
