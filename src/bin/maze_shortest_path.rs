@@ -11,7 +11,7 @@ use std::collections::{HashSet, VecDeque};
   with a value of 22 and moving in the temple updates it
   with the corresponding operation and value of the rooms.
 
-  This is just a creative path finding problem. We need to
+  This is just a creative path-finding problem. We need to
   find the shortest path and since this is an unweighted
   graph BFS is sufficient. No need for Dijkstra's algorithm.
 
