@@ -44,8 +44,6 @@ fn f(cache: &mut Cache, c: u16, a: u16, b: u16) -> u16 {
   if let Some(v) = cache[_a][_b] { return v; }
 
   let v = match (a,b) {
-    (0,b) => b+1,
-    (1,b) => b+1+c,
     (2,b) => b*(c+1) + 2*c + 1,
     (a,0) => f(cache, c, a-1, c),
     (a,b) => {
@@ -58,12 +56,40 @@ fn f(cache: &mut Cache, c: u16, a: u16, b: u16) -> u16 {
   v
 }
 
-fn valid_setting(&c: &u16) -> bool {
-  let mut cache = [[None; 0x10000]; 5];
-  f(&mut cache, c, 4, 1) == 6
+#[allow(dead_code)]
+fn original_solution() -> u16 {
+  (0..0x8000).find(|&c| {
+    let mut cache = [[None; 0x10000]; 5];
+    f(&mut cache, c, 4, 1) == 6
+  }).unwrap()
+}
+
+/*
+  Note that this solution was implemented after
+  I completed the challenge.
+
+  f(3,b) = f(3,b-1)*(c+1) + 2*c + 1
+  Using this relation we can apply dynamic programming
+  to the problem. We know that f(3,0) = c*(c+3) + 1, so
+  with that starting conditions we can compute f(3,b) for
+  all values of b.
+
+  f(4,1) = f(3, f(3,c))
+
+  From this relation, we can get the final answer.
+  This is about 5 times faster than the memoized solution
+  and finds the correct setting in about 2-3 seconds.
+*/
+fn dp_solution() -> u16 {
+  (0..0x8000).find(|&c| {
+    let mut dp = [c*(c+3) + 1; 0x10000];
+    for b in 1..0x10000 {
+      dp[b] = dp[b-1]*(c+1) + 2*c + 1;
+    }
+    dp[dp[c as usize] as usize] == 6
+  }).unwrap()
 }
 
 fn main() {
-  let setting = (0..0x8000).find(valid_setting).unwrap();
-  println!("f({}) = 6", setting);
+  println!("f({}) = 6", dp_solution());
 }
