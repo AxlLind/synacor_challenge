@@ -12,7 +12,7 @@ const WRT: u16 = 16; const CLL: u16 = 17;
 const RET: u16 = 18; const OUT: u16 = 19;
 const IN:  u16 = 20; const NOP: u16 = 21;
 
-pub enum ExitCode { Output(char), NeedInput, Halted }
+pub enum ExitCode { Output(u16), NeedInput, Halted }
 
 pub struct CPU {
   pub reg: [u16; 8],
@@ -40,12 +40,7 @@ impl CPU {
       let (op,a,b,c) = self.fetch_args();
       self.incr_pc(op);
       match op {
-        HLT => return ExitCode::Halted,
         JMP => self.pc = a,
-        JT  => if a != 0 { self.pc = b as usize },
-        JF  => if a == 0 { self.pc = b as usize },
-        PSH => self.stack.push_back(a as u16),
-        POP => self.reg[a] = self.stack.pop_back().expect("stack underflow"),
         SET => self.reg[a] = b,
         EQ  => self.reg[a] = (b == c) as u16,
         GT  => self.reg[a] = (b > c)  as u16,
@@ -57,7 +52,12 @@ impl CPU {
         OR  => self.reg[a] = b | c,
         RD  => self.reg[a] = self.mem[b as usize],
         WRT => self.mem[a] = b,
-        OUT => return ExitCode::Output(a as u8 as char),
+        PSH => self.stack.push_back(a as u16),
+        POP => self.reg[a] = self.stack.pop_back().expect("stack underflow"),
+        JT  => if a != 0 { self.pc = b as usize },
+        JF  => if a == 0 { self.pc = b as usize },
+        HLT => return ExitCode::Halted,
+        OUT => return ExitCode::Output(a as u16),
         IN  => match self.input.pop_front() {
           Some(i) => {
             self.reg[a] = i;
@@ -65,13 +65,13 @@ impl CPU {
           }
           None => return ExitCode::NeedInput,
         },
-        CLL => {
-          self.stack.push_back(self.pc as u16);
-          self.pc = a;
-        },
         RET => match self.stack.pop_back() {
           Some(a) => self.pc = a as usize,
           None    => return ExitCode::Halted,
+        },
+        CLL => {
+          self.stack.push_back(self.pc as u16);
+          self.pc = a;
         },
         NOP => {},
         _   => panic!("invalid opcode {}", op)

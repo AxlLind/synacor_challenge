@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::Result;
+use std::io::{stdout, Result, Write};
 use itertools::Itertools;
 use easy_io::InputReader;
 use cpu::{CPU, ExitCode};
@@ -22,20 +22,50 @@ fn read_program(path: &str) -> Result<Vec<u16>> {
   Ok(program)
 }
 
-fn main() -> Result<()> {
-  let inputs = fs::read_to_string("files/inputs.txt")?;
-  let program = read_program("files/challenge.bin")?;
-  let mut cpu = CPU::new(&program);
-  let mut input = InputReader::new();
+fn write_buf(buf: &mut Vec<u8>) -> Result<()> {
+  stdout().write_all(&buf)?;
+  stdout().flush()?;
+  buf.clear();
+  Ok(())
+}
 
-  cpu.reg[7] = 25734; // computed in teleporter_setting.rs
-  cpu.push_str(&inputs);
+fn manual_play(cpu: &mut CPU) -> Result<()> {
+  let mut input = InputReader::new();
+  let mut buf = Vec::new();
   loop {
     match cpu.execute() {
-      ExitCode::NeedInput => cpu.push_str(&input.next_line()),
-      ExitCode::Output(c) => print!("{}", c),
-      ExitCode::Halted    => break,
+      ExitCode::Output(i) => buf.push(i as u8),
+      ExitCode::NeedInput => {
+        write_buf(&mut buf)?;
+        cpu.push_str(&input.next_line());
+      },
+      ExitCode::Halted => break,
     }
+  }
+  write_buf(&mut buf)
+}
+
+fn finish_challenge(cpu: &mut CPU) -> Result<()> {
+  let inputs = fs::read_to_string("files/inputs.txt")?;
+  cpu.push_str(&inputs);
+
+  let mut buf = Vec::new();
+  while let ExitCode::Output(i) = cpu.execute() {
+    buf.push(i as u8);
+  }
+  write_buf(&mut buf)
+}
+
+fn main() -> Result<()> {
+  let args = std::env::args().collect::<Vec<_>>();
+  let mode = args.get(1).unwrap_or(&String::new()).clone();
+  let program = read_program("files/challenge.bin")?;
+  let mut cpu = CPU::new(&program);
+
+  cpu.reg[7] = 25734; // computed in teleporter_setting.rs
+  match &mode[..] {
+    "manual" => manual_play(&mut cpu)?,
+    _ => finish_challenge(&mut cpu)?,
   }
   Ok(())
 }
