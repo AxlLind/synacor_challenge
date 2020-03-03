@@ -81,7 +81,7 @@ This is an unweighted graph, meaning [BFS](https://en.wikipedia.org/wiki/Breadth
 
 In the end, you walk into the vault and find a mirror. When you use the mirror it gives you the final code but when I gave it to the site it was incorrect! After a while, I figure out that it's a mirror so obviously the code is mirrored! I reverse the string but still it says it's incorrect. If you look at each letter carefully you notice that they are all symmetrical except for `p,q` which when mirrored become each other. So the translation becomes the following. **Code 8/8 done!**
 
-![flag8](./screenshots/flag8.png)
+![mirror_flag](./screenshots/mirror_flag.png)
 
 See [maze_shortest_path.rs](./src/bin/maze_shortest_path.rs).
 
