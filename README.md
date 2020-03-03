@@ -14,7 +14,7 @@ Solution to the [Synacor Challenge](https://challenge.synacor.com/) in Rust. Tha
 This section is a write up of the steps I took to solve the challenge and the different strategies I applied along the way, as well as what strategies failed. The challenge was to find all the 8 codes hidden throughout the game and behind the puzzles.
 
 ## 1. Build the VM
-Starting the challenge, you are given just a binary file and a specification of a custom CPU architecture. So the first step is to build a VM that can run this binary. Not too many issues here. Took me maybe 2-3 hours with some debugging to get it passing the self test. Having just finished [Advent of Code 2019](https://github.com/AxlLind/AdventOfCode2019/) certainly helped here. I could reuse a lot of the patterns I used for the [IntCoder](https://github.com/AxlLind/AdventOfCode2019/blob/master/src/intcoder.rs) VM in those puzzles. **Code 1-3/8 done!** I think my implementation ended up quite clean:
+Starting the challenge, you are given just a [binary file](./files/challenge.bin) and a [specification](./files/arch-spec) of a custom CPU architecture. So the first step is to build a VM that can run this binary. Not too many issues here. Took me maybe 2-3 hours with some debugging to get it passing the self test. Having just finished [Advent of Code 2019](https://github.com/AxlLind/AdventOfCode2019/) certainly helped here. I could reuse a lot of the patterns I used for the [IntCoder](https://github.com/AxlLind/AdventOfCode2019/blob/master/src/intcoder.rs) VM in those puzzles. **Code 1-3/8 done!** I think my implementation ended up quite clean:
 
 ![cpu](./screenshots/cpu.png)
 
@@ -23,7 +23,9 @@ See [cpu.rs](./src/cpu.rs).
 ## 2. Manually explore
 When you get the VM up and running you are presented with a text adventure game. I started by manually exploring the game and immediately you find the fourth code. Eventually, after some frustration in the maze, you find a can. This enables you to light the lantern and enter the dark part where you find another code. **Code 4-5/8 done!**
 
-I started writing down the commands I did and automatically feeding it to the CPU at the start of the program. This meant I did not have to replay the beginning all the time. I continued adding to this list of inputs as I progressed through the challenge. Manually exploring the game worked up until you encounter the locked door.
+![game](./screenshots/game.png)
+
+I started writing down the commands I did and automatically feeding it to the CPU at the start of the program. This meant I did not have to replay the parts I had already done when restarting the program. I continued adding to this list of inputs as I progressed through the challenge, all the way to the end. Another solution could have been serialize the CPU state, output that to a file and deserialize when starting the program. A text file of inputs seemed like a much simpler solution though.
 
 See [inputs.txt](./files/inputs.txt).
 
@@ -32,35 +34,37 @@ After exploring the game you end up with 5 coins at a locked door. You need to p
 
 ![equation](./screenshots/equation.png)
 
-So the puzzle is clearly to satisfy the equation with the order we place the coins, given their respective value. With 5 coins there are `5! = 120` permutations. Too much to check by hand but trivially brute-forced by a computer. I wrote a program to just test all permutations of coins and output commands that places them in the correct order. With that, the door unlocks and behind it you find a teleporter. Using the teleporter, you get an other code but you end up at a dead-end... **Code 6/8 done!**
+So the puzzle is clearly to satisfy the equation with the order we place the coins, given their respective value. With 5 coins there are `5! = 120` permutations. Too much to check by hand but trivially brute-forced by a computer. I wrote a program to just test all permutations of coins and output commands that places them in the correct order, which I added to my [list of inputs](./files/inputs.txt). With that, the door unlocks and behind it you find a teleporter. Using the teleporter, you get an other code but you end up at a dead-end... **Code 6/8 done!**
 
 See [solve_coins.rs](./src/bin/solve_coins.rs).
 
 ## 4. Finding the teleporter setting
-After using the teleporter you find a book in the next room. Using the teleporter leads to a dead-end but the book hints that register `$7` is unused in the program except for when the teleporter is used. So we need to find the correct value for the register so that the teleporter takes us to the next place we want to go.
+After using the teleporter you find a book in the next room. Using the teleporter leads to a dead-end but the book hints that register `$7` is completely unused in the program except for when the teleporter is used. So we need to find the correct value for the register so that the teleporter takes us to the next place we want to go.
 
 ### 4.1 Try brute force?
-Why make things complicated? Always try the easiest solution first. Unfortunately, brute-forcing the register value does not work. The program performs some expensive computation for all non-zero values of register `$7`. Each computation takes minutes to complete so brute-forcing `0x8000` values will not work. We need to be able to analyze what the program does. So this lead me to the next step.
+My first idea was to try brute-forcing it. Why make things complicated? Always try the easiest solution first. I assumed this would not work since it would be too easy and that was the solution to the previous puzzle but maybe it could give some valuable information.
+
+As I suspected, brute-forcing the register value does not work. The program performs some expensive computation for all non-zero values of register `$7`. Each computation takes minutes to complete so brute-forcing `0x8000` values will definitely not work. We need to be able to analyze what the program does. So this lead me to the next step.
 
 ### 4.2 Build a disassembler
-I needed to be able to analyze what the program actually does so disassembling the binary seemed like the best solution. Building a basic disassembler was fairly straight forward. You just have to step through the binary and print the corresponding instructions in a readable form. The majority of the binary does not contain machine code though. It presumably contains encrypted data that can only be decrypted by solving the puzzles.
+I needed to be able to analyze what the program actually does so disassembling the binary seemed like the best solution. Building a basic disassembler was fairly straight forward. You just have to step through the binary and print the corresponding instructions in a readable form. You could build a bit on what you did when implementing the [cpu](./src/cpu.rs). The majority of the binary does not contain machine code though. It presumably contains encrypted data that can only be decrypted by solving the puzzles.
 
 ![asm](./screenshots/asm.png)
 
-See [disassembler.rs](./src/bin/disassembler.rs) and the [disassembled program](./files/disassembled.asm).
+See [disassembler.rs](./src/bin/disassembler.rs) and [disassembled.asm](./files/disassembled.asm).
 
 ### 4.3 Analyze the assembly
 Looking at the assembly we see that register `$7` only shows up a few times. First is in the test suite, at `0x0209`, where they just check that it is set to zero. We can easily just remove this instruction (e.g replace it with `nop`), otherwise, we do not pass the test suite when we try different values for `$7`. Secondly, we see it at address `0x154b` in a `jf` instruction. If the register is zero it jumps, so clearly this must be where the teleporter code is! Lastly, we also see `$7` used at a function at the address `0x178b`. After some analysis of the assembly code, you realize that this is where the expensive computation takes place.
 
 ### 4.4 Just disable the expensive function?
-My first idea was to just remove the call to the expensive function. The program checks that it returns `6` so I removed that check as well. This *sort of* works. The teleporter now teleports to a new place and a code is printed! Unfortunately, the code is not accepted by the website. So, I could technically go forward and solve the next puzzle but that would not be completing the challenge. It seems the value of `$7` is used when decrypting the code so we still have some work to do. We need to find a value for the register such that the function returns 6.
+My first idea was to just remove the call to the expensive function. This can easily be done by finding the relevant address in the binary, which the disassembler prints out, and when reading in the binary you simply change the values at the appropriate indexes. The program checks that it returns `6` so I removed that check as well. This *sort of* works. The teleporter now teleports to a new place and a code is printed! Unfortunately, the code is not accepted by the website. So, I could technically go forward and solve the next puzzle but that would not be completing the challenge. It seems the value of `$7` is used when decrypting the code so we still have some work to do. We need to find a value for the register such that the function returns 6.
 
 ### 4.5 Porting the expensive function to Rust
 To be able to find input such that the function returns `6` we need to be able to run it in Rust. After commentating the assembly and some careful analysis, I was able to port the expensive function to Rust. It looks like an [Ackermann](https://en.wikipedia.org/wiki/Ackermann_function)-style function, meaning it has a very large recursive depth and can be incredibly expensive to compute.
 
 ![expensive_function](./screenshots/expensive_function.png)
 
-Just calling the function is way to slow even in Rust so we need to make some optimizations. My first idea was to just try memoizing the function. This actually makes it fast enough to get an answer within a reasonable amount of time! We see that the value of the first parameter never increases. This means the total number of possible inputs `(a,b)` is relatively small, given our starting parameters `(4,1)`. Parameter `a` can only take on the values `0-4` and `b` only `0-0xFFFF`, giving a total of `327 675` possible inputs. So we can use an array as a very fast memoization cache. This turned out to be about an **8x** speed up compared to using a HashMap as a cache. Lastly, we can note some [mathematical relations in the Ackermann function](https://archive.lib.msu.edu/crcmath/math/math/a/a044.htm) that apply to `f(1,b)` and `f(2,b)` that gave a further **5x** speed up. With these optimizations, we can find the correct value in about 10 seconds, good enough!
+Just calling the function is way to slow even in Rust so we need to make some optimizations. My first idea was to just try memoizing the function. This actually makes it fast enough to get an answer within a reasonable amount of time! We see that the value of the first parameter never increases. This means the total number of possible inputs `(a,b)` is relatively small, given our starting parameters `(4,1)`. Parameter `a` can only take on the values `0-4` and `b` only `0-0xFFFF`, giving a total of `327 675` possible inputs. So we can use an array as a very fast memoization cache. This turned out to be about an **8x** speed up compared to using a HashMap as a cache. Lastly, we can note some [mathematical relations in the Ackermann function](https://archive.lib.msu.edu/crcmath/math/math/a/a044.htm) that apply to `f(1,b)` and `f(2,b)` which gave a further **5x** speed up. With these optimizations, we can find the correct value in about 10 seconds, good enough!
 
 With the correct value set in register `$7`, I disabled the code that runs the expensive function, as well as the check in the test suite, by replacing it with `nop` instructions. The teleporter now teleports to a different place and the code works, phew! **Code 7/8 done!**
 
