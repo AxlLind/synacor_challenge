@@ -6,25 +6,33 @@ use std::collections::{HashSet, VecDeque};
     4  *  11 *
     +  4  -  18
     22 -  9  *
-  You start at the 22 room and the goal of the puzzle is
-  to end up at the 1 room with a "value" of 30. You start
-  with a value of 22 and moving in the temple updates it
-  with the corresponding operation and value of the rooms.
+  You start at the 22 room and the goal of the puzzle is to end
+  up at the 1 room with a "value" of 30. You start with a value
+  of 22 and moving in the temple updates it with the corresponding
+  operation and value of the rooms.
 
-  This is just a creative path-finding problem. We need to
-  find the shortest path and since this is an unweighted
-  graph BFS is sufficient. No need for Dijkstra's algorithm.
+  This is just a creative path-finding problem. We need to find
+  the shortest path and since this is an unweighted graph BFS
+  is sufficient. No need for Dijkstra's algorithm.
 
   The key idea is to each node in the graph is a pair (room,score),
   not just a room. This avoids infinite loops in the BFS while at
   the same time allowing you to visit a room more than once.
   This means we start at node (6,22) and the goal is simply (1,30).
+
+  22 + 4 - 11 * 4 - 18 - 11 - 1
+  The program outputs the path as an expression. This makes you able
+  to find the corresponding set of game commands by hand. That seemed
+  simpler than writing code to automatically output the path as commands.
 */
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Clone,Copy)]
 enum Op { Add, Sub, Mul }
 
-struct Node { val: i32, neighbours: Vec<(usize,Op)> }
+struct Node {
+  val: i32,
+  neighbours: Vec<(usize,Op)>
+}
 
 fn bfs(g: &[Node], (start,score): (usize, i32), end: (usize, i32)) -> Vec<(usize,Op)> {
   let mut queue = VecDeque::new();
@@ -55,10 +63,7 @@ fn bfs(g: &[Node], (start,score): (usize, i32), end: (usize, i32)) -> Vec<(usize
     }
   };
 
-  path.iter()
-    .skip(1)
-    .map(|&(v,_,op)| (v,op))
-    .collect()
+  path.iter().map(|&(v,_,op)| (v,op)).collect()
 }
 
 fn main() {
@@ -74,8 +79,16 @@ fn main() {
     Node { val: 9,  neighbours: vec![(4,Op::Sub),(6,Op::Sub),(3,Op::Sub),(5,Op::Sub),(5,Op::Mul)] },
   ];
 
-  // Printing (node,op) makes you able to find the commands in
-  // the game that make up the path. That seemed easier than
-  // writing code to automatically output the path as commands.
-  for v in bfs(&graph, (6,22), (1,30)) { println!("{:?}", v); }
+  let path = bfs(&graph, (6,22), (1,30)).iter()
+    .map(|&(node,op)| {
+      let val = graph[node].val;
+      let op = match op {
+        Op::Add => '+',
+        Op::Sub => '-',
+        Op::Mul => '*',
+      };
+      format!(" {} {}", op, val)
+    })
+    .collect::<String>();
+  println!("{}", &path[3..]);
 }
