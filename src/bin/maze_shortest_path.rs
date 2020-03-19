@@ -26,69 +26,63 @@ use std::collections::{HashSet, VecDeque};
   simpler than writing code to automatically output the path as commands.
 */
 
+static G: [Node; 8] = [
+  Node { val: 8,  neighbours: &[(1,Op::Sub),(3,Op::Sub),(2,Op::Mul),(4,Op::Mul),(3,Op::Mul)] },
+  Node { val: 1,  neighbours: &[(0,Op::Sub),(3,Op::Sub),(5,Op::Mul),(3,Op::Mul)] },
+  Node { val: 4,  neighbours: &[(0,Op::Mul),(4,Op::Mul),(3,Op::Mul),(4,Op::Add)] },
+  Node { val: 11, neighbours: &[(0,Op::Sub),(1,Op::Sub),(4,Op::Sub),(5,Op::Sub),(7,Op::Sub),(0,Op::Mul),(1,Op::Mul),(2,Op::Mul),(4,Op::Mul),(5,Op::Mul)] },
+  Node { val: 4,  neighbours: &[(2,Op::Mul),(0,Op::Mul),(3,Op::Mul),(2,Op::Add),(7,Op::Sub),(3,Op::Sub),(5,Op::Sub)] },
+  Node { val: 18, neighbours: &[(1,Op::Mul),(3,Op::Mul),(7,Op::Mul),(4,Op::Sub),(7,Op::Sub),(3,Op::Sub)] },
+  Node { val: 22, neighbours: &[(2,Op::Add),(4,Op::Add),(4,Op::Sub),(7,Op::Sub)] },
+  Node { val: 9,  neighbours: &[(4,Op::Sub),(6,Op::Sub),(3,Op::Sub),(5,Op::Sub),(5,Op::Mul)] },
+];
+
 #[derive(Clone,Copy)]
 enum Op { Add, Sub, Mul }
 
 struct Node {
   val: i32,
-  neighbours: Vec<(usize,Op)>
+  neighbours: &'static [(usize,Op)],
 }
 
-fn bfs(g: &[Node], (start,score): (usize, i32), end: (usize, i32)) -> Vec<(usize,Op)> {
+fn bfs((start,score): (usize, i32), goal: (usize, i32)) -> Vec<(usize,Op)> {
   let mut queue = VecDeque::new();
   let mut visited = HashSet::new();
-  queue.push_back(vec![(start,score,Op::Add)]);
+  queue.push_back(vec![(start,Op::Add,score)]);
 
   let path = loop {
     let path = queue.pop_front().unwrap();
-    let &(u,score,_) = path.last().unwrap();
+    let &(u,_,score) = path.last().unwrap();
 
-    if (u,score) == end { break path; }
+    if (u,score) == goal { break path; }
     visited.insert((u,score));
 
-    let neighbours = g[u].neighbours.iter()
-      .map(|&(v,op)| {
-        let score = match op {
-          Op::Add => score + g[v].val,
-          Op::Sub => score - g[v].val,
-          Op::Mul => score * g[v].val,
-        };
-        (v,score,op)
-      })
-      .filter(|&(v,score,_)| !visited.contains(&(v,score)));
-    for v in neighbours {
+    for &(v,op) in G[u].neighbours {
+      let score = match op {
+        Op::Add => score + G[v].val,
+        Op::Sub => score - G[v].val,
+        Op::Mul => score * G[v].val,
+      };
+      if visited.contains(&(v,score)) {
+        continue;
+      }
       let mut new_path = path.clone();
-      new_path.push(v);
+      new_path.push((v,op,score));
       queue.push_back(new_path);
     }
   };
 
-  path.iter().map(|&(v,_,op)| (v,op)).collect()
+  path.iter().map(|&(v,op,_)| (v,op)).collect()
 }
 
 fn main() {
-  // translated by hand from the maze above
-  let graph = [
-    Node { val: 8,  neighbours: vec![(1,Op::Sub),(3,Op::Sub),(2,Op::Mul),(4,Op::Mul),(3,Op::Mul)] },
-    Node { val: 1,  neighbours: vec![(0,Op::Sub),(3,Op::Sub),(5,Op::Mul),(3,Op::Mul)] },
-    Node { val: 4,  neighbours: vec![(0,Op::Mul),(4,Op::Mul),(3,Op::Mul),(4,Op::Add)] },
-    Node { val: 11, neighbours: vec![(0,Op::Sub),(1,Op::Sub),(4,Op::Sub),(5,Op::Sub),(7,Op::Sub),(0,Op::Mul),(1,Op::Mul),(2,Op::Mul),(4,Op::Mul),(5,Op::Mul)] },
-    Node { val: 4,  neighbours: vec![(2,Op::Mul),(0,Op::Mul),(3,Op::Mul),(2,Op::Add),(7,Op::Sub),(3,Op::Sub),(5,Op::Sub)] },
-    Node { val: 18, neighbours: vec![(1,Op::Mul),(3,Op::Mul),(7,Op::Mul),(4,Op::Sub),(7,Op::Sub),(3,Op::Sub)] },
-    Node { val: 22, neighbours: vec![(2,Op::Add),(4,Op::Add),(4,Op::Sub),(7,Op::Sub)] },
-    Node { val: 9,  neighbours: vec![(4,Op::Sub),(6,Op::Sub),(3,Op::Sub),(5,Op::Sub),(5,Op::Mul)] },
-  ];
-
-  let path = bfs(&graph, (6,22), (1,30)).iter()
-    .map(|&(node,op)| {
-      let val = graph[node].val;
-      let op = match op {
-        Op::Add => '+',
-        Op::Sub => '-',
-        Op::Mul => '*',
-      };
-      format!(" {} {}", op, val)
+  let path = bfs((6,22), (1,30));
+  let expr = path.iter()
+    .map(|&(v,op)| match op {
+      Op::Add => format!(" + {}", G[v].val),
+      Op::Sub => format!(" - {}", G[v].val),
+      Op::Mul => format!(" * {}", G[v].val),
     })
     .collect::<String>();
-  println!("{}", &path[3..]);
+  println!("{}", &expr[3..]);
 }
