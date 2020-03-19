@@ -20,19 +20,26 @@
   right are comments I added to make it easier for me to analyze.
   We see that the register $0 is the only register used after the
   function returns so this is clearly the single return value.
-
   After some careful analysis, we can convert this into the
-  function f below. We see that this is a very slow Ackermann-like
-  function, but adding memoization turns out to make it fast enough.
+  function f below.
 
-  Note that the value of 'a' never increases. This means the
-  possible values of (a,b) is relatively small. We can thus
-  use a much faster array as a cache instead of a HashMap.
-  This turned out to be about an 8x speed up.
+  fn f(c: u16, a: u16, b: u16) -> u16 {
+    match (a,b) {
+      (0,b) => b+1,
+      (a,0) => f(c, a-1, c),
+      (a,b) => f(c, a-1, f(c,a,b-1)),
+    }
+  }
 
-  We can also note some relations in the Ackermann function:
-    - f(1,b) = b+1+c,
-    - f(2,b) = b*(c+1) + 2*c + 1
+  We see that this is a very slow Ackermann-like function, but
+  adding memoization turns out to make it fast enough. Note that
+  the value of 'a' never increases. This means the possible
+  values of (a,b) is relatively small. We can thus use a much
+  faster array as a cache instead of a HashMap. This turned out
+  to be about an 8x speed up.
+
+  We can also note this relation in the Ackermann function:
+    f(2,b) = b*(c+1) + 2*c + 1
   With these optimizations the program finds the correct
   setting in about 10 seconds!
 */
@@ -56,40 +63,10 @@ fn f(cache: &mut Cache, c: u16, a: u16, b: u16) -> u16 {
   v
 }
 
-#[allow(dead_code)]
-fn original_solution() -> u16 {
-  (0..0x8000).find(|&c| {
+fn main() {
+  let setting = (0..0x8000).find(|&c| {
     let mut cache = [[None; 0x10000]; 5];
     f(&mut cache, c, 4, 1) == 6
-  }).unwrap()
-}
-
-/*
-  Note that this solution was implemented after
-  I completed the challenge.
-
-  f(3,b) = f(3,b-1)*(c+1) + 2*c + 1
-  Using this relation we can apply dynamic programming
-  to the problem. We know that f(3,0) = c*(c+3) + 1, so
-  with that starting conditions we can compute f(3,b) for
-  all values of b.
-
-  f(4,1) = f(3, f(3,c))
-
-  From this relation, we can get the final answer.
-  This is about 5 times faster than the memoized solution
-  and finds the correct setting in about 2-3 seconds.
-*/
-fn dp_solution() -> u16 {
-  (0..0x8000).find(|&c| {
-    let mut dp = [c*(c+3) + 1; 0x10000];
-    for b in 1..0x10000 {
-      dp[b] = dp[b-1]*(c+1) + 2*c + 1;
-    }
-    dp[dp[c as usize] as usize] == 6
-  }).unwrap()
-}
-
-fn main() {
-  println!("f({}) = 6", dp_solution());
+  });
+  println!("f({},4,1) = 6", setting.unwrap());
 }
