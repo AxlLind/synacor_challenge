@@ -1,22 +1,22 @@
 use std::collections::VecDeque;
 
-const HLT: u16 = 0;  const SET: u16 = 1;  const PSH: u16 = 2;
-const POP: u16 = 3;  const EQ:  u16 = 4;  const GT:  u16 = 5;
-const JMP: u16 = 6;  const JT:  u16 = 7;  const JF:  u16 = 8;
-const ADD: u16 = 9;  const MUL: u16 = 10; const MOD: u16 = 11;
-const AND: u16 = 12; const OR:  u16 = 13; const NOT: u16 = 14;
-const RD:  u16 = 15; const WRT: u16 = 16; const CLL: u16 = 17;
-const RET: u16 = 18; const OUT: u16 = 19; const IN:  u16 = 20;
+const HLT: usize = 0; const JT:  usize =  7; const NOT: usize = 14;
+const SET: usize = 1; const JF:  usize =  8; const RD:  usize = 15;
+const PSH: usize = 2; const ADD: usize =  9; const WRT: usize = 16;
+const POP: usize = 3; const MUL: usize = 10; const CLL: usize = 17;
+const EQ:  usize = 4; const MOD: usize = 11; const RET: usize = 18;
+const GT:  usize = 5; const AND: usize = 12; const OUT: usize = 19;
+const JMP: usize = 6; const OR:  usize = 13; const IN:  usize = 20;
 const INST_LEN: [u16;22] = [0,3,2,2,4,4,0,3,3,4,4,4,4,4,3,3,3,2,0,2,0,1];
 
 pub enum ExitCode { Output(u16), NeedInput, Halted }
 
 pub struct CPU {
   pub reg: [u16; 8],
-  mem: [u16; 0x8000],
   stack: Vec<u16>,
-  input: VecDeque<u16>,
+  input: VecDeque<u8>,
   pc: u16,
+  mem: [u16; 0x8000],
 }
 
 impl CPU {
@@ -25,17 +25,17 @@ impl CPU {
     mem[..program.len()].clone_from_slice(program);
     Self {
       reg: [0; 8],
-      mem,
       stack: Vec::new(),
       input: VecDeque::new(),
       pc: 0,
+      mem,
     }
   }
 
   pub fn execute(&mut self) -> ExitCode {
     loop {
       let (op,a,b,c) = self.fetch_args();
-      self.pc += INST_LEN[op as usize];
+      self.pc += INST_LEN.get(op).expect("Invalid opcode");
       match op {
         SET => self.reg[a] = b,
         OR  => self.reg[a] = b | c,
@@ -58,7 +58,7 @@ impl CPU {
         OUT => return ExitCode::Output(a as u16),
         IN  => match self.input.pop_front() {
           Some(i) => {
-            self.reg[a] = i;
+            self.reg[a] = i as u16;
             self.pc += 2;
           }
           None => return ExitCode::NeedInput,
@@ -73,12 +73,12 @@ impl CPU {
   }
 
   pub fn push_str(&mut self, s: &str) {
-    self.input.extend(s.bytes().map(|b| b as u16));
-    self.input.push_back(b'\n' as u16);
+    self.input.extend(s.bytes());
+    self.input.push_back(b'\n');
   }
 
-  fn fetch_args(&self) -> (u16,usize,u16,u16) {
-    let op = self.mem[self.pc as usize];
+  fn fetch_args(&self) -> (usize, usize, u16, u16) {
+    let op = self.mem[self.pc as usize] as usize;
     let a = match op {
       PSH|JMP|JT|JF|CLL|WRT|OUT => self.read_adr(1),
       _ => self.mem[self.pc as usize + 1] - 0x8000,
